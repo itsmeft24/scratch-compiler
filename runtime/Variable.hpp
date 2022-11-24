@@ -16,6 +16,7 @@ namespace scratch {
 			long long m_integer;
 			double m_double;
 		};
+		std::optional<double> into_number() const;
 	public:
 		Variable();
 		Variable(const Variable&);

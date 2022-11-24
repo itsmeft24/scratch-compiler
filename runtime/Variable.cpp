@@ -1,5 +1,26 @@
 #include "Variable.hpp"
 
+std::optional<double> scratch::Variable::into_number() const
+{
+	if (m_tag == None) {
+		return std::nullopt;
+	}
+	if (m_tag == Double) {
+		return this->m_double;
+	}
+	if (m_tag == Integer) {
+		return this->m_integer;
+	}
+	if (m_tag == String) {
+		try {
+			return std::stod(*this->m_string);
+		}
+		catch (std::exception& e) {
+			return std::nullopt;
+		}
+	}
+}
+
 scratch::Variable::Variable()
 {
 	m_tag = None;
@@ -83,6 +104,14 @@ bool scratch::Variable::operator==(const Variable& other)
 {
 	if (other.m_tag == None || this->m_tag == None) {
 		return false;
+	}
+	const auto& this_number = this->into_number();
+	const auto& other_number = other.into_number();
+	if (this_number.has_value() && other_number.has_value()) {
+		return this_number.value() == other_number.value();
+	}
+	if (this->m_tag == String && other.m_tag == String) {
+		return this->m_string->compare(*other.m_string) == 0;
 	}
 
 	return false;

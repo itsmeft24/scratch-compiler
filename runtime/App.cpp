@@ -33,9 +33,9 @@ std::shared_ptr<scratch::EventListener> scratch::App::event_listener()
     return m_event_listener;
 }
 
-std::shared_ptr<scratch::backend::Renderer> scratch::App::renderer()
+std::pair<std::scoped_lock<std::mutex>, std::shared_ptr<scratch::backend::Renderer>> scratch::App::renderer()
 {
-    return m_renderer;
+    return std::pair<std::scoped_lock<std::mutex>, std::shared_ptr<scratch::backend::Renderer>>(renderer_lock, m_renderer);
 }
 
 void scratch::App::poll_input()

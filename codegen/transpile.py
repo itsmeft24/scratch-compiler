@@ -181,19 +181,19 @@ if __name__ == "__main__":
 
     if stage_target == None:
         print("[WARN] Failed to find Stage target.")
-
+    
+    backdrop_switches = {}
+    
     for target in project["targets"]:
+        # Since we handle the stage target later, we simply ignore it for now.
+        if target["isStage"]:
+            continue
         
-        # output = Compiler()
         output_header = Compiler()
         output_source = Compiler()
-        # output.push_raw('#include <chrono>\n#include <thread>\n#include "Target.hpp"\n#include "app.hpp"\n#include "Variable.hpp"\n#include "Sound.hpp"\n\nusing namespace std::chrono_literals;\n\n')
-        output_header.push_raw('#include <chrono>\n#include <thread>\n#include "runtime/Target.hpp"\n#include "runtime/App.hpp"\n#include "runtime/Variable.hpp"\n#include "runtime/Sound.hpp"\n#include "runtime/EventListener.hpp"\n\nusing namespace std::chrono_literals;\n\n')
+        output_header.push_raw('#pragma once\n#include <chrono>\n#include <thread>\n#include "runtime/Target.hpp"\n#include "runtime/App.hpp"\n#include "runtime/Variable.hpp"\n#include "runtime/Sound.hpp"\n#include "runtime/EventListener.hpp"\n\nusing namespace std::chrono_literals;\n\n')
         
-        if target["isStage"]:
-            output_source.push_raw('#include "'+cxx_sanitize(target["name"])+'.hxx"\n\n')
-        else:
-            output_source.push_raw('#include "'+cxx_sanitize(target["name"])+'.hxx"\n#include "'+stage_target["name"]+'.hxx"\n\n')
+        output_source.push_raw('#include "'+cxx_sanitize(target["name"])+'.hxx"\n#include "'+stage_target["name"]+'.hxx"\n\n')
 
         print("Compiling " + target["name"] + "...")
         
@@ -218,6 +218,8 @@ if __name__ == "__main__":
             output_source.enter_scope(cxx_sanitize(target["name"])+"::"+cxx_sanitize(target["name"])+"()")
         else:
             output_source.enter_scope(cxx_sanitize(target["name"])+"::"+cxx_sanitize(target["name"])+"() : "+", ".join(constructor_initializer_list))
+        if "size" in target:
+            output_source.state("this->m_size = "+str(target["size"] / 100))
         for costume in target["costumes"]:
             output_source.state_nocolon('// ' + costume["name"] + '\n')
             output_source.state('this->costumes.emplace_back("'
@@ -243,6 +245,8 @@ if __name__ == "__main__":
             
             # The first opcode must be of 'event' type, so we match against those for our output C++ symbol.
             if start["opcode"] == "event_whenbackdropswitchesto":
+                backdrop_name = start["fields"]["BACKDROP"][0];
+                backdrop_switches[backdrop_name] = (backdrop_switches[backdrop_name] if backdrop_name in backdrop_switches else []) + [cxx_sanitize(target["name"])]
                 output_header.state("void when_backdrop_switches_to_" + start["fields"]["BACKDROP"][0]+"()")
                 output_source.enter_scope("void "+cxx_sanitize(target["name"])+"::when_backdrop_switches_to_" + start["fields"]["BACKDROP"][0]+"()")
             elif start["opcode"] == "event_whenbroadcastreceived":
@@ -270,5 +274,108 @@ if __name__ == "__main__":
         # Save compiled sprite code to cxx file.
         output_header.write("../sprites/"+cxx_sanitize(target["name"])+".hxx")
         output_source.write("../sprites/"+cxx_sanitize(target["name"])+".cxx")
+    
+    # Now, we compile the Stage target. Just like above, we start by instantiating Compilers for both the header and source files.
+    stage_header = Compiler()
+    stage_source = Compiler()
+
+    stage_header.push_raw('#pragma once\n#include <chrono>\n#include <thread>\n#include "runtime/Target.hpp"\n#include "runtime/App.hpp"\n#include "runtime/Variable.hpp"\n#include "runtime/Sound.hpp"\n#include "runtime/EventListener.hpp"\n\nusing namespace std::chrono_literals;\n\n')
+    stage_source.push_raw('#include "'+cxx_sanitize(stage_target["name"])+'.hxx"\n\n')
+
+    for target_list in backdrop_switches.values():
+        for target in target_list:
+            stage_source.push_raw('#include "'+target+'.hxx"\n')
+
+    print("Compiling " + stage_target["name"] + "...")
+
+    # Start by declaring a class with the name of the stage_target, and specifying that it inherits from scratch::Target.
+    stage_header.enter_scope("class " + cxx_sanitize(stage_target["name"]) + " : public scratch::Target")
+    stage_header.push_raw("public:\n")
+
+    constructor_initializer_list = []
+
+    # Declare all associated sounds and sprite-local variables as members, and collect constructor calls into the constructor initializer list for the sprite class.
+    for sound in stage_target["sounds"]:
+        stage_header.state("scratch::Sound " + cxx_sanitize(sound["name"]))
+        constructor_initializer_list.append(cxx_sanitize(sound["name"])+'("'+sound["md5ext"]+'")')
+    for var in stage_target["variables"]:
+        stage_header.state("scratch::Variable " + cxx_sanitize(stage_target["variables"][var][0]))
+        constructor_initializer_list.append(cxx_sanitize(stage_target["variables"][var][0])+'('+str(stage_target["variables"][var][1])+')')
+
+    stage_header.state(cxx_sanitize(stage_target["name"])+"()")
+
+    # Emit code for the sprite's constructor.
+    if len(constructor_initializer_list) == 0:
+        stage_source.enter_scope(cxx_sanitize(stage_target["name"])+"::"+cxx_sanitize(stage_target["name"])+"()")
+    else:
+        stage_source.enter_scope(cxx_sanitize(stage_target["name"])+"::"+cxx_sanitize(stage_target["name"])+"() : "+", ".join(constructor_initializer_list))
+    for costume in stage_target["costumes"]:
+        stage_source.state_nocolon('// ' + costume["name"] + '\n')
+        stage_source.state('this->costumes.emplace_back("'
+        +costume["md5ext"]
+        +'", '
+        +str(costume["rotationCenterX"])
+        +', '
+        +str(costume["rotationCenterY"])
+        +')')
+    stage_source.exit_scope()
+
+    # Collect all entry points into an array.
+    functions = []
+    for block_hash in stage_target["blocks"]:    
+        block = stage_target["blocks"][block_hash]
+        if "event_when" in block["opcode"]:
+            functions.append(block_hash)
+
+    if backdrop_switches:
+        stage_header.state('virtual void switch_costume(int index) override\n')
+        stage_source.enter_scope('void '+cxx_sanitize(stage_target["name"])+'::switch_costume(int index)')
+        handle_index = 0
+        for backdrop, target_list in backdrop_switches.items():
+            stage_source.enter_scope("if (index == "+str(get_costume_index(stage_target, backdrop))+")")
+            for target in target_list:
+                stage_source.state('std::thread handle'+str(handle_index)+'([] { dynamic_pointer_cast<'+target+'>(scratch::app()->m_targets["'+target+'"])->when_backdrop_switches_to_'+backdrop+"(); })")
+                stage_source.state("handle"+str(handle_index)+".detach()")
+                handle_index+=1
+            stage_source.exit_scope()
+        stage_source.exit_scope()
+
+    # Iterate over each sprite's functions.
+    for function in functions:
+        # Get the first opcode in the function.
+        start = stage_target["blocks"][function]
+        
+        # The first opcode must be of 'event' type, so we match against those for our output C++ symbol.
+        if start["opcode"] == "event_whenbackdropswitchesto":
+            backdrop_name = start["fields"]["BACKDROP"][0];
+            backdrop_switches[backdrop_name] = (backdrop_switches[backdrop_name] if backdrop_name in backdrop_switches else []) + [cxx_sanitize(stage_target["name"])]
+            stage_header.state("void when_backdrop_switches_to_" + start["fields"]["BACKDROP"][0]+"()")
+            stage_source.enter_scope("void "+cxx_sanitize(stage_target["name"])+"::when_backdrop_switches_to_" + start["fields"]["BACKDROP"][0]+"()")
+        elif start["opcode"] == "event_whenbroadcastreceived":
+            stage_header.state("void recieve_" + start["fields"]["BROADCAST_OPTION"][0]+"()")
+            stage_source.enter_scope("void "+cxx_sanitize(stage_target["name"])+"::recieve_" + start["fields"]["BROADCAST_OPTION"][0]+"()")
+        elif start["opcode"] == "event_whenflagclicked":
+            stage_header.state("void green_flag()")
+            stage_source.enter_scope("void "+cxx_sanitize(stage_target["name"])+"::green_flag()")
+        elif start["opcode"] == "event_whenthisspriteclicked":
+            stage_header.state("void clicked()")
+            stage_source.enter_scope("void "+cxx_sanitize(stage_target["name"])+"::clicked()")
+        
+        # Get the first ACTUAL opcode in the function.
+        first_node = stage_target["blocks"][start["next"]]
+
+        # Compile each opcode recursively.
+        compile_scoped_expr(stage_target, stage_target, first_node, stage_source)
+        
+        # Emit a '};' to signify the end of the function.
+        stage_source.exit_scope()
+
+    # Emit a '};' to signify the end of the class definition.
+    stage_header.exit_scope()
+
+    # Save compiled sprite code to cxx file.
+    stage_header.write("../sprites/"+cxx_sanitize(stage_target["name"])+".hxx")
+    stage_source.write("../sprites/"+cxx_sanitize(stage_target["name"])+".cxx")
+
 
     # output.write("../transpiled.cxx")

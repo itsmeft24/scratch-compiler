@@ -51,7 +51,7 @@ extern "C" int main(int argc, char* argv[])
     SDL_Event event;
     while (1) {
         SDL_PollEvent(&event);
-
+        g_main_app->poll_input();
         switch (event.type)
         {
         case SDL_QUIT:
@@ -60,17 +60,20 @@ extern "C" int main(int argc, char* argv[])
 
         if (g_main_app->event_listener()->is_broadcasted_play_snd_select.load()) {
             std::thread handle([] { dynamic_pointer_cast<Stage>(g_main_app->m_targets["Stage"])->recieve_play_snd_select(); });
-            handle.detach(); 
+            handle.detach();
+            g_main_app->event_listener()->is_broadcasted_play_snd_select.store(false);
         }
         if (g_main_app->event_listener()->is_broadcasted_show_melee_menu.load()) {
             std::thread handle1([] { dynamic_pointer_cast<Stage>(g_main_app->m_targets["Stage"])->recieve_show_melee_menu(); });
             handle1.detach();
+            g_main_app->event_listener()->is_broadcasted_show_melee_menu.store(false);
         }
         if (g_main_app->event_listener()->is_broadcasted_show_title_screen.load()) {
             std::thread handle2([] { dynamic_pointer_cast<loading_pic_03_u>(g_main_app->m_targets["loading_pic_03_u"])->recieve_show_title_screen(); });
             handle2.detach();
             std::thread handle3([] { dynamic_pointer_cast<title_screen>(g_main_app->m_targets["title_screen"])->recieve_show_title_screen(); });
             handle3.detach();
+            g_main_app->event_listener()->is_broadcasted_show_title_screen.store(false);
         }
 
     }

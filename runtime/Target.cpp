@@ -28,12 +28,20 @@ void scratch::Target::next_costume()
 
 void scratch::Target::set_visible(bool is_visible)
 {
+	this->render();
 	m_is_visible = is_visible;
+}
+
+void scratch::Target::set_size(double size)
+{
+	m_size = size;
+	this->render();
 }
 
 void scratch::Target::set_rotation(double rot)
 {
 	m_rotation = rot;
+	this->render();
 }
 
 void scratch::Target::render()

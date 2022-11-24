@@ -8,7 +8,8 @@ namespace scratch {
 		
 		Image::Image(const std::string& file_path)
 		{
-			m_backing_texture = IMG_LoadTexture(scratch::app()->renderer()->get_backing_renderer(), file_path.c_str());
+			auto [lock, renderer] = scratch::app()->renderer();
+			m_backing_texture = IMG_LoadTexture(renderer->get_backing_renderer(), file_path.c_str());
 			SDL_QueryTexture(m_backing_texture, nullptr, nullptr, &m_width, &m_height);
 		}
 

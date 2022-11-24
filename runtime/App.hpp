@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <mutex>
 #include <memory>
 #include <unordered_map>
 
@@ -16,6 +17,7 @@ namespace scratch {
 		int m_mouse_x;
 		int m_mouse_y;
 
+		std::mutex renderer_lock;
 		std::shared_ptr<scratch::backend::Renderer> m_renderer;
 		std::shared_ptr<scratch::EventListener> m_event_listener;
 		
@@ -28,7 +30,7 @@ namespace scratch {
 
 		std::shared_ptr<scratch::Target> stage();
 		std::shared_ptr<scratch::EventListener> event_listener();
-		std::shared_ptr<scratch::backend::Renderer> renderer();
+		std::pair<std::scoped_lock<std::mutex>, std::shared_ptr<scratch::backend::Renderer>> renderer();
 
 		
 

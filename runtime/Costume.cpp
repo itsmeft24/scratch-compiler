@@ -11,8 +11,6 @@ scratch::Costume::Costume(const std::string& file_path, double rotation_center_x
 
 void scratch::Costume::render(double x, double y, double rotation, double size) const
 {
-	auto* backend = scratch::app()->renderer()->get_backing_renderer();
-
 	SDL_Rect source{
 		0,
 		0,
@@ -20,10 +18,10 @@ void scratch::Costume::render(double x, double y, double rotation, double size) 
 		this->m_backing_image->height()
 	};
 	SDL_Rect dest{
-		x + scratch::app()->screen_x() / 2.0f - this->m_backing_image->width() / 2.0f,
-		y + scratch::app()->screen_y() / 2.0f - this->m_backing_image->height() / 2.0f,
-		this->m_backing_image->width(),
-		this->m_backing_image->height()
+		x + scratch::app()->screen_x() / 2.0f - this->m_backing_image->width() * size / 2.0f,
+		y + scratch::app()->screen_y() / 2.0f - this->m_backing_image->height() * size / 2.0f,
+		this->m_backing_image->width() * size,
+		this->m_backing_image->height() * size
 	};
 	
 	SDL_Point axis{
@@ -31,9 +29,11 @@ void scratch::Costume::render(double x, double y, double rotation, double size) 
 		this->m_rotation_center_y
 	};
 
-	scratch::app()->renderer()->start_frame();
+	auto[lock, renderer] = scratch::app()->renderer();
 
-	scratch::app()->renderer()->blit(*this->m_backing_image.get(), &source, &dest, rotation, &axis);
+	renderer->start_frame();
 
-	scratch::app()->renderer()->end_frame();
+	renderer->blit(*this->m_backing_image.get(), &source, &dest, rotation, &axis);
+
+	renderer->end_frame();
 }
