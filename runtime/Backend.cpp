@@ -8,8 +8,7 @@ namespace scratch {
 		
 		Image::Image(const std::string& file_path)
 		{
-			auto [lock, renderer] = scratch::app()->renderer();
-			m_backing_texture = IMG_LoadTexture(renderer->get_backing_renderer(), file_path.c_str());
+			m_backing_texture = IMG_LoadTexture(scratch::app()->renderer()->get_backing_renderer(), file_path.c_str());
 			SDL_QueryTexture(m_backing_texture, nullptr, nullptr, &m_width, &m_height);
 		}
 
@@ -48,24 +47,24 @@ namespace scratch {
 		}
 
 		void Renderer::end_frame() {
-			auto end = SDL_GetPerformanceCounter();
-			float elapsed_time = (end - m_performance_counter) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
-			if (elapsed_time <= 16.666f) {
-				SDL_Delay(static_cast<unsigned int>(std::floor(16.666f - elapsed_time)));
-			}
+			// auto end = SDL_GetPerformanceCounter();
+			// float elapsed_time = (end - m_performance_counter) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
+			// if (elapsed_time <= 16.666f) {
+			//	SDL_Delay(static_cast<unsigned int>(std::floor(16.666f - elapsed_time)));
+			//}
 			SDL_RenderPresent(m_renderer);
 		}
 
-		void Renderer::blit(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect) {
-			SDL_RenderCopy(m_renderer, texture.get_backing_texture(), src_rect, dst_rect);
+		void Renderer::blit(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect) {
+			SDL_RenderCopy(m_renderer, texture->get_backing_texture(), src_rect, dst_rect);
 		}
 
-		void Renderer::blit(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect, double rotation, SDL_Point* axis) {
-			SDL_RenderCopyEx(m_renderer, texture.get_backing_texture(), src_rect, dst_rect, rotation, axis, SDL_FLIP_NONE);
+		void Renderer::blit(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect, double rotation, SDL_Point* axis) {
+			SDL_RenderCopyEx(m_renderer, texture->get_backing_texture(), src_rect, dst_rect, rotation, axis, SDL_FLIP_NONE);
 		}
 
-		void Renderer::blit_flipped(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect) {
-			SDL_RenderCopyEx(m_renderer, texture.get_backing_texture(), src_rect, dst_rect, 0.0f, nullptr, SDL_FLIP_HORIZONTAL);
+		void Renderer::blit_flipped(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect) {
+			SDL_RenderCopyEx(m_renderer, texture->get_backing_texture(), src_rect, dst_rect, 0.0f, nullptr, SDL_FLIP_HORIZONTAL);
 		}
 		
 		SDL_Renderer* Renderer::get_backing_renderer() {

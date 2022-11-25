@@ -14,7 +14,15 @@ namespace scratch {
 		Costume(const Costume&) = delete;
 		Costume(Costume&&) = default;
 		Costume& operator= (const Costume&) = delete;
-		void render(double x, double y, double rotation, double size) const;
+		SDL_Rect get_rect(double x, double y, double size) const;
+		void render(std::shared_ptr<scratch::backend::Renderer> renderer, double x, double y, double rotation, double size) const;
+		
+		constexpr inline std::pair<int, int> get_size() const {
+			return { m_backing_image->width() , m_backing_image->height() };
+		}
+		constexpr inline std::pair<double, double> get_rotation_axis() const {
+			return { m_rotation_center_x , m_rotation_center_y };
+		}
 	};
 };
 

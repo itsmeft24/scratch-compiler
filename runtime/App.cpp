@@ -1,12 +1,16 @@
+#include <numbers>
 #include <thread>
 #include <functional>
 #include "App.hpp"
+#include "Utils.hpp"
 
+using namespace std::chrono_literals;
 
 extern std::shared_ptr<scratch::App> g_main_app;
 
 scratch::App::App()
 {
+    last_render = std::chrono::system_clock::now();
     m_key_buffer = nullptr;
     m_click_state = 0;
     m_mouse_x = 0;
@@ -17,8 +21,9 @@ scratch::App::App()
 
 void scratch::App::start()
 {
-    for (const auto& target : m_targets) {
-        std::thread handle([target] { target.second->green_flag(); });
+    for (size_t x = 0; x < m_targets.size(); x++) {
+        auto& target = m_targets.at_index(x);
+        std::thread handle([target]{target->green_flag(); });
         handle.detach();
     }
 }
@@ -33,9 +38,23 @@ std::shared_ptr<scratch::EventListener> scratch::App::event_listener()
     return m_event_listener;
 }
 
-std::pair<std::scoped_lock<std::mutex>, std::shared_ptr<scratch::backend::Renderer>> scratch::App::renderer()
+std::shared_ptr<scratch::backend::Renderer> scratch::App::renderer()
 {
-    return std::pair<std::scoped_lock<std::mutex>, std::shared_ptr<scratch::backend::Renderer>>(renderer_lock, m_renderer);
+    return m_renderer;
+}
+
+void scratch::App::request_render()
+{
+    std::scoped_lock<std::mutex> lock(renderer_lock);
+    std::chrono::system_clock::duration time_since_last_render = std::chrono::system_clock::now() - last_render;
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(time_since_last_render) >= 33.3333333ms) {
+        m_renderer->start_frame();
+        for (size_t x = 0; x < m_targets.size(); x++) {
+            m_targets.at_index(x)->render(m_renderer);
+        }
+        m_renderer->end_frame();
+        last_render = std::chrono::system_clock::now();
+    }
 }
 
 void scratch::App::poll_input()
@@ -44,9 +63,29 @@ void scratch::App::poll_input()
     m_key_buffer = SDL_GetKeyboardState(nullptr);
 }
 
-bool scratch::App::mouse_touching(const scratch::Target*)
+constexpr inline std::pair<double, double> rotate_point(double x, double y, double rot_x, double rot_y, double angle) {
+    return {
+        std::cos(angle) * (x - rot_x) - std::sin(angle) * (y - rot_y) + rot_x,
+        std::sin(angle) * (x - rot_x) + std::cos(angle) * (y - rot_y) + rot_y
+    };
+}
+
+bool scratch::App::mouse_touching(const scratch::Target* target)
 {
-    return false;
+    std::scoped_lock<std::mutex> lock(mouse_lock);
+    double angle = target->get_rotation() * std::numbers::pi / 180.0f;
+    auto [rot_x, rot_y] = target->get_rotation_axis();
+    SDL_Rect rect = target->get_rect();
+
+    if (target->get_rotation() == 0) {
+        SDL_Point mouse{m_mouse_x, m_mouse_y};
+        return SDL_PointInRect(&mouse, &rect);
+    }
+
+    return m_mouse_x * std::cos(angle) - m_mouse_y * std::sin(angle) + rot_x >= rect.x
+        && m_mouse_x * std::cos(angle) - m_mouse_y * std::sin(angle) + rot_x <= rect.x + rect.w
+        && m_mouse_x * std::sin(angle) + m_mouse_y * std::cos(angle) + rot_y >= rect.y
+        && m_mouse_x * std::sin(angle) + m_mouse_y * std::cos(angle) + rot_y <= rect.y + rect.h;
 }
 
 bool scratch::App::mouse_down()

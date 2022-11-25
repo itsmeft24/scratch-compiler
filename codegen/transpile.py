@@ -173,6 +173,9 @@ if __name__ == "__main__":
         with sb3.open('project.json') as project_file:
             project = json.load(project_file)
     
+    # Sort all targets by layer order.
+    project["targets"] = sorted(project["targets"], key=lambda target: target['layerOrder'])
+    
     stage_target = None
 
     for target in project["targets"]:
@@ -218,12 +221,11 @@ if __name__ == "__main__":
             output_source.enter_scope(cxx_sanitize(target["name"])+"::"+cxx_sanitize(target["name"])+"()")
         else:
             output_source.enter_scope(cxx_sanitize(target["name"])+"::"+cxx_sanitize(target["name"])+"() : "+", ".join(constructor_initializer_list))
-        if "size" in target:
-            output_source.state("this->m_size = "+str(target["size"] / 100))
+        output_source.state('this->setup("'+cxx_sanitize(target["name"])+'", '+str(target["x"])+', '+str(target["y"])+', '+str(target["size"] / 100)+', '+str(target["visible"]).lower()+')')
         for costume in target["costumes"]:
             output_source.state_nocolon('// ' + costume["name"] + '\n')
             output_source.state('this->costumes.emplace_back("'
-            +costume["md5ext"]
+            +costume["md5ext"].replace("svg", "png")
             +'", '
             +str(costume["rotationCenterX"])
             +', '
@@ -312,7 +314,7 @@ if __name__ == "__main__":
     for costume in stage_target["costumes"]:
         stage_source.state_nocolon('// ' + costume["name"] + '\n')
         stage_source.state('this->costumes.emplace_back("'
-        +costume["md5ext"]
+        +costume["md5ext"].replace("svg", "png")
         +'", '
         +str(costume["rotationCenterX"])
         +', '
@@ -334,7 +336,7 @@ if __name__ == "__main__":
         for backdrop, target_list in backdrop_switches.items():
             stage_source.enter_scope("if (index == "+str(get_costume_index(stage_target, backdrop))+")")
             for target in target_list:
-                stage_source.state('std::thread handle'+str(handle_index)+'([] { dynamic_pointer_cast<'+target+'>(scratch::app()->m_targets["'+target+'"])->when_backdrop_switches_to_'+backdrop+"(); })")
+                stage_source.state('std::thread handle'+str(handle_index)+'([] { dynamic_pointer_cast<'+target+'>(scratch::app()->m_targets.at("'+target+'"))->when_backdrop_switches_to_'+backdrop+"(); })")
                 stage_source.state("handle"+str(handle_index)+".detach()")
                 handle_index+=1
             stage_source.exit_scope()

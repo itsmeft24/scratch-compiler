@@ -60,11 +60,11 @@ namespace scratch {
 
 			void end_frame();
 			
-			void blit(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect);
+			void blit(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect);
 
-			void blit(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect, double rotation, SDL_Point* axis);
+			void blit(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect, double rotation, SDL_Point* axis);
 
-			void blit_flipped(const Image& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect);
+			void blit_flipped(const std::unique_ptr<Image>& texture, const SDL_Rect* src_rect, SDL_Rect* dst_rect);
 		};
 	};
 };

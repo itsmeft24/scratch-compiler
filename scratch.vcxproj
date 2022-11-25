@@ -153,6 +153,7 @@
     <ClCompile Include="runtime\EventListener.cpp" />
     <ClCompile Include="runtime\Main.cpp" />
     <ClCompile Include="runtime\Sound.cpp" />
+    <ClCompile Include="runtime\Target.cpp" />
     <ClCompile Include="sprites\back_btn.cxx" />
     <ClCompile Include="sprites\loading_pic_01_u.cxx" />
     <ClCompile Include="sprites\loading_pic_03_u.cxx" />
@@ -172,7 +173,6 @@
     <ClCompile Include="sprites\sidebar.cxx" />
     <ClCompile Include="sprites\Stage.cxx" />
     <ClCompile Include="sprites\title_screen.cxx" />
-    <ClCompile Include="runtime\Target.cpp" />
     <ClCompile Include="runtime\Variable.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -183,6 +183,7 @@
     <ClInclude Include="runtime\Sound.hpp" />
     <ClInclude Include="runtime\Target.hpp" />
     <ClInclude Include="runtime\Variable.hpp" />
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
