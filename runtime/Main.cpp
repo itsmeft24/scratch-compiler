@@ -1,10 +1,10 @@
-#include <SDL2/SDL.h>
 #include <iostream>
+#include <SDL2/SDL.h>
 #include "App.hpp"
 
-std::shared_ptr<scratch::App> g_main_app = std::make_unique<scratch::App>();
+std::shared_ptr<scratch::App> g_app = std::make_unique<scratch::App>();
 
-#include "./sprites/stage.hxx"
+#include "sprites/stage.hxx"
 #include "sprites/main_menu_btn00_melee_frame_u.hxx"
 #include "sprites/main_menu_btn3_00_other_frame_u.hxx"
 #include "sprites/main_menu_btn3_00_colle_frame_u.hxx"
@@ -26,7 +26,7 @@ std::shared_ptr<scratch::App> g_main_app = std::make_unique<scratch::App>();
 
 extern "C" int main(int argc, char* argv[])
 {
-    g_main_app->m_targets = {
+    g_app->m_targets = {
         { "Stage", dynamic_pointer_cast<scratch::Target>(std::make_shared<Stage>())},
         { "loading_pic_03_u", dynamic_pointer_cast<scratch::Target>(std::make_shared<loading_pic_03_u>())},
         { "loading_pic_01_u", dynamic_pointer_cast<scratch::Target>(std::make_shared<loading_pic_01_u>())},
@@ -47,33 +47,19 @@ extern "C" int main(int argc, char* argv[])
         { "main_menu_btn00_melee_frame_u", dynamic_pointer_cast<scratch::Target>(std::make_shared<main_menu_btn00_melee_frame_u>())},
         { "p3_other_top_btn3_06_circle_00_s2", dynamic_pointer_cast<scratch::Target>(std::make_shared<p3_other_top_btn3_06_circle_00_s2>())},
     };
-    g_main_app->start();
+    g_app->start();
     SDL_Event event;
     while (1) {
-        g_main_app->poll_input();
+        g_app->poll_input();
 
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT) {
             break;
         }
 
-        if (g_main_app->event_listener()->is_broadcasted_play_snd_select.load()) {
-            std::thread handle([] { dynamic_pointer_cast<Stage>(g_main_app->m_targets.at("Stage"))->recieve_play_snd_select(); });
-            handle.detach();
-            g_main_app->event_listener()->is_broadcasted_play_snd_select.store(false);
-        }
-        if (g_main_app->event_listener()->is_broadcasted_show_melee_menu.load()) {
-            std::thread handle1([] { dynamic_pointer_cast<Stage>(g_main_app->m_targets.at("Stage"))->recieve_show_melee_menu(); });
-            handle1.detach();
-            g_main_app->event_listener()->is_broadcasted_show_melee_menu.store(false);
-        }
-        if (g_main_app->event_listener()->is_broadcasted_show_title_screen.load()) {
-            std::thread handle2([] { dynamic_pointer_cast<loading_pic_03_u>(g_main_app->m_targets.at("loading_pic_03_u"))->recieve_show_title_screen(); });
-            handle2.detach();
-            std::thread handle3([] { dynamic_pointer_cast<title_screen>(g_main_app->m_targets.at("title_screen"))->recieve_show_title_screen(); });
-            handle3.detach();
-            g_main_app->event_listener()->is_broadcasted_show_title_screen.store(false);
-        }
+        g_app->event_listener()->tick();
+
+        g_app->request_render();
     }
     return 0;
 }

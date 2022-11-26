@@ -1,5 +1,7 @@
 #pragma once
+#include <memory>
 #include <atomic>
+
 namespace scratch {
 	class EventListener
 	{
@@ -22,6 +24,7 @@ namespace scratch {
 		inline void broadcast_event_show_title_screen() {
 			is_broadcasted_show_title_screen.store(true);
 		}
+		void tick();
 	};
 };
 

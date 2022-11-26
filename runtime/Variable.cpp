@@ -9,7 +9,7 @@ std::optional<double> scratch::Variable::into_number() const
 		return this->m_double;
 	}
 	if (m_tag == Integer) {
-		return this->m_integer;
+		return static_cast<double>(this->m_integer);
 	}
 	if (m_tag == String) {
 		try {
@@ -79,6 +79,9 @@ scratch::Variable::~Variable()
 
 scratch::Variable& scratch::Variable::operator=(const Variable& other)
 {
+	std::scoped_lock<std::mutex> this_lock(this->mutex);
+	std::scoped_lock<std::mutex> other_lock(other.mutex);
+
 	if (this->m_tag == String) {
 		delete this->m_string;
 		this->m_string = nullptr;
@@ -102,6 +105,9 @@ scratch::Variable& scratch::Variable::operator=(const Variable& other)
 
 bool scratch::Variable::operator==(const Variable& other)
 {
+	std::scoped_lock<std::mutex> this_lock(this->mutex);
+	std::scoped_lock<std::mutex> other_lock(other.mutex);
+
 	if (other.m_tag == None || this->m_tag == None) {
 		return false;
 	}

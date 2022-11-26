@@ -6,26 +6,17 @@
 
 using namespace std::chrono_literals;
 
-extern std::shared_ptr<scratch::App> g_main_app;
+extern std::shared_ptr<scratch::App> g_app;
 
 scratch::App::App()
 {
-    last_render = std::chrono::system_clock::now();
+    m_last_render = std::chrono::system_clock::now();
     m_key_buffer = nullptr;
     m_click_state = 0;
     m_mouse_x = 0;
     m_mouse_y = 0;
     m_renderer = std::make_shared<scratch::backend::Renderer>();
     m_event_listener = std::make_shared<scratch::EventListener>();
-}
-
-void scratch::App::start()
-{
-    for (size_t x = 0; x < m_targets.size(); x++) {
-        auto& target = m_targets.at_index(x);
-        std::thread handle([target]{target->green_flag(); });
-        handle.detach();
-    }
 }
 
 std::shared_ptr<scratch::Target> scratch::App::stage()
@@ -43,36 +34,16 @@ std::shared_ptr<scratch::backend::Renderer> scratch::App::renderer()
     return m_renderer;
 }
 
-void scratch::App::request_render()
-{
-    std::scoped_lock<std::mutex> lock(renderer_lock);
-    std::chrono::system_clock::duration time_since_last_render = std::chrono::system_clock::now() - last_render;
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(time_since_last_render) >= 33.3333333ms) {
-        m_renderer->start_frame();
-        for (size_t x = 0; x < m_targets.size(); x++) {
-            m_targets.at_index(x)->render(m_renderer);
-        }
-        m_renderer->end_frame();
-        last_render = std::chrono::system_clock::now();
-    }
-}
-
 void scratch::App::poll_input()
 {
-    m_click_state = SDL_GetMouseState(&m_mouse_x, &m_mouse_y);
-    m_key_buffer = SDL_GetKeyboardState(nullptr);
-}
-
-constexpr inline std::pair<double, double> rotate_point(double x, double y, double rot_x, double rot_y, double angle) {
-    return {
-        std::cos(angle) * (x - rot_x) - std::sin(angle) * (y - rot_y) + rot_x,
-        std::sin(angle) * (x - rot_x) + std::cos(angle) * (y - rot_y) + rot_y
-    };
+    int mouse_x = 0, mouse_y = 0;
+    m_click_state = SDL_GetMouseState(&mouse_x, &mouse_y);
+    m_mouse_x.store(mouse_x);
+    m_mouse_y.store(mouse_y);
 }
 
 bool scratch::App::mouse_touching(const scratch::Target* target)
 {
-    std::scoped_lock<std::mutex> lock(mouse_lock);
     double angle = target->get_rotation() * std::numbers::pi / 180.0f;
     auto [rot_x, rot_y] = target->get_rotation_axis();
     SDL_Rect rect = target->get_rect();
@@ -98,7 +69,49 @@ void scratch::App::play_sound(const scratch::Sound& sound)
     Mix_PlayChannel(-1, sound.get_chunk(), 0);
 }
 
+void scratch::App::start()
+{
+    m_key_buffer = SDL_GetKeyboardState(nullptr);
+
+    for (size_t x = 0; x < m_targets.size(); x++) {
+        auto& target = m_targets.at_index(x);
+        std::thread handle([target] {target->green_flag(); });
+        handle.detach();
+    }
+}
+
+void scratch::App::request_render()
+{
+    /*
+    std::scoped_lock<std::mutex> lock(renderer_lock);
+    std::chrono::system_clock::duration elapsed = std::chrono::system_clock::now() - last_render;
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed) >= 33.3333333ms) {
+        m_renderer->start_frame();
+        for (size_t x = 0; x < m_targets.size(); x++) {
+            m_targets.at_index(x)->render(m_renderer);
+        }
+        m_renderer->end_frame();
+        last_render = std::chrono::system_clock::now();
+    }
+    */
+    std::scoped_lock<std::mutex> lock(m_renderer_lock);
+    m_renderer->start_frame();
+    for (size_t x = 0; x < m_targets.size(); x++) {
+        m_targets.at_index(x)->render(m_renderer);
+    }
+
+    std::chrono::system_clock::duration elapsed = std::chrono::system_clock::now() - m_last_render;
+    const auto& elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
+    if (elapsed_ms <= 33.3333333ms) {
+        SDL_Delay(static_cast<unsigned int>(std::floor((33.3333333ms - elapsed_ms).count())));
+    }
+
+    m_renderer->end_frame();
+    m_last_render = std::chrono::system_clock::now();
+}
+
 std::shared_ptr<scratch::App> scratch::app()
 {
-    return g_main_app;
+    return g_app;
 }
+

@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <mutex>
 #include <vector>
 #include "Costume.hpp"
 
@@ -17,6 +18,7 @@ namespace scratch {
 		// To Do: Implement these!
 		// bool m_draggable;
 		// RotationStyle m_rotation_style;
+		mutable std::mutex mutex;
 	protected:
 		std::vector<scratch::Costume> costumes;
 	public:
@@ -33,6 +35,7 @@ namespace scratch {
 		virtual void switch_costume(int index);
 		virtual void green_flag();
 		virtual void clicked();
+		virtual void clone_start();
 		constexpr inline double get_size() const {
 			return m_size;
 		}

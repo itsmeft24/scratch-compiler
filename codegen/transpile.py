@@ -177,7 +177,8 @@ if __name__ == "__main__":
     project["targets"] = sorted(project["targets"], key=lambda target: target['layerOrder'])
     
     stage_target = None
-
+    
+    # Isolate the stage target.
     for target in project["targets"]:
         if target["isStage"]:
             stage_target = target
@@ -227,6 +228,8 @@ if __name__ == "__main__":
             output_source.state('this->costumes.emplace_back("'
             +costume["md5ext"].replace("svg", "png")
             +'", '
+            +str(costume["bitmapResolution"])
+            +', '
             +str(costume["rotationCenterX"])
             +', '
             +str(costume["rotationCenterY"])
@@ -316,6 +319,8 @@ if __name__ == "__main__":
         stage_source.state('this->costumes.emplace_back("'
         +costume["md5ext"].replace("svg", "png")
         +'", '
+        +str(costume["bitmapResolution"])
+        +', '
         +str(costume["rotationCenterX"])
         +', '
         +str(costume["rotationCenterY"])

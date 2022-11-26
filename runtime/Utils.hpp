@@ -17,7 +17,7 @@ namespace scratch {
 			// Typedefs
 			using vector_type = std::vector<ValueType>;
 			using index_type = std::size_t;
-			using hash_map_type = std::unordered_map<KeyType, int>;
+			using hash_map_type = std::unordered_map<KeyType, index_type>;
 
 			// Members:
 			vector_type elements;

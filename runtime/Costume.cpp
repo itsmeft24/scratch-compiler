@@ -2,8 +2,9 @@
 #include "App.hpp"
 #include "Costume.hpp"
 
-scratch::Costume::Costume(const std::string& file_path, double rotation_center_x, double rotation_center_y)
+scratch::Costume::Costume(const std::string& file_path, int bitmap_resolution, double rotation_center_x, double rotation_center_y)
 {
+	m_bitmap_resolution = bitmap_resolution;
 	m_rotation_center_x = rotation_center_x;
 	m_rotation_center_y = rotation_center_y;
 	m_backing_image = std::make_unique<scratch::backend::Image>(file_path);
@@ -12,10 +13,10 @@ scratch::Costume::Costume(const std::string& file_path, double rotation_center_x
 SDL_Rect scratch::Costume::get_rect(double x, double y, double size) const
 {
 	return {
-		static_cast<int>(std::round(x + scratch::app()->screen_x() / 2.0f - m_rotation_center_x * size)),
-		static_cast<int>(std::round(-y + scratch::app()->screen_y() / 2.0f - m_rotation_center_y * size)),
-		static_cast<int>(std::round(this->m_backing_image->width() * size)),
-		static_cast<int>(std::round(this->m_backing_image->height() * size)),
+		static_cast<int>(std::round(x + scratch::app()->screen_x() / 2.0f - m_rotation_center_x * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(-y + scratch::app()->screen_y() / 2.0f - m_rotation_center_y * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(this->m_backing_image->width() * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(this->m_backing_image->height() * size / this->m_bitmap_resolution)),
 	};
 }
 
@@ -31,8 +32,8 @@ void scratch::Costume::render(std::shared_ptr<scratch::backend::Renderer> render
 	SDL_Rect dest = this->get_rect(x, y, size);
 	
 	SDL_Point axis{
-		static_cast<int>(std::round(this->m_rotation_center_x)),
-		static_cast<int>(std::round(this->m_rotation_center_y))
+		static_cast<int>(std::round(this->m_rotation_center_x / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(this->m_rotation_center_y / this->m_bitmap_resolution))
 	};
 
 	renderer->blit(this->m_backing_image, &source, &dest, rotation, &axis);

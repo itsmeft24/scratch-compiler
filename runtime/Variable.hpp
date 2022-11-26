@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <string>
 #include <optional>
 
@@ -17,6 +18,8 @@ namespace scratch {
 			long long m_integer;
 			double m_double;
 		};
+		mutable std::mutex mutex;
+
 		std::optional<double> into_number() const;
 	public:
 		Variable();
