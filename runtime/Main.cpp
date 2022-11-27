@@ -59,7 +59,7 @@ extern "C" int main(int argc, char* argv[])
 
         g_app->event_listener()->tick();
 
-        g_app->request_render();
+        g_app->render_frame();
     }
     return 0;
 }

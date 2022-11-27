@@ -22,7 +22,7 @@ namespace scratch {
 			return { m_backing_image->width() , m_backing_image->height() };
 		}
 		constexpr inline std::pair<double, double> get_rotation_axis() const {
-			return { m_rotation_center_x , m_rotation_center_y };
+			return { m_rotation_center_x / m_bitmap_resolution , m_rotation_center_y / m_bitmap_resolution };
 		}
 	};
 };

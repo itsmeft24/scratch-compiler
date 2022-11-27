@@ -18,7 +18,7 @@ void scratch::Target::switch_costume(int index)
 		m_costume_index = index;
 	}
 	mutex.unlock();
-	scratch::app()->request_render();
+	scratch::app()->sync_next_frame();
 }
 
 void scratch::Target::setup(const std::string& str, int trans_x, int trans_y, double size, bool is_visible)
@@ -37,7 +37,7 @@ void scratch::Target::next_costume()
 		m_costume_index++;
 	}
 	mutex.unlock();
-	scratch::app()->request_render();
+	scratch::app()->sync_next_frame();
 }
 
 void scratch::Target::set_visible(bool is_visible)
@@ -45,7 +45,7 @@ void scratch::Target::set_visible(bool is_visible)
 	mutex.lock();
 	m_is_visible = is_visible;
 	mutex.unlock();
-	scratch::app()->request_render();
+	scratch::app()->sync_next_frame();
 }
 
 void scratch::Target::set_size(double size)
@@ -53,7 +53,7 @@ void scratch::Target::set_size(double size)
 	mutex.lock();
 	m_size = size;
 	mutex.unlock();
-	scratch::app()->request_render();
+	scratch::app()->sync_next_frame();
 }
 
 void scratch::Target::set_rotation(double rot)
@@ -64,16 +64,15 @@ void scratch::Target::set_rotation(double rot)
 		m_rotation -= 360.0f;
 	}
 	mutex.unlock();
-	scratch::app()->request_render();
+	scratch::app()->sync_next_frame();
 }
 
 void scratch::Target::render(std::shared_ptr<scratch::backend::Renderer> renderer)
 {
-	mutex.lock();
+	std::scoped_lock<std::mutex> lock(mutex);
 	if (m_costume_index < costumes.size() && m_is_visible) {
 		const auto& costume = costumes.at(m_costume_index);
 		costume.render(renderer, m_trans_x, m_trans_y, m_rotation, m_size);
-		mutex.unlock();
 	}
 }
 

@@ -32,8 +32,8 @@ void scratch::Costume::render(std::shared_ptr<scratch::backend::Renderer> render
 	SDL_Rect dest = this->get_rect(x, y, size);
 	
 	SDL_Point axis{
-		static_cast<int>(std::round(this->m_rotation_center_x / this->m_bitmap_resolution)),
-		static_cast<int>(std::round(this->m_rotation_center_y / this->m_bitmap_resolution))
+		static_cast<int>(std::round(this->m_rotation_center_x * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(this->m_rotation_center_y * size / this->m_bitmap_resolution))
 	};
 
 	renderer->blit(this->m_backing_image, &source, &dest, rotation, &axis);

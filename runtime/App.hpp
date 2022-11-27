@@ -17,9 +17,10 @@ namespace scratch {
 		const unsigned char* m_key_buffer;
 		unsigned int m_click_state;
 		std::chrono::system_clock::time_point m_last_render;
-		std::mutex m_renderer_lock;
+		// mutable std::mutex m_renderer_lock;
 		std::shared_ptr<scratch::backend::Renderer> m_renderer;
 		std::shared_ptr<scratch::EventListener> m_event_listener;
+		std::atomic<char> frame_syncer;
 	public:
 		std::atomic<int> m_mouse_x;
 		std::atomic<int> m_mouse_y;
@@ -50,13 +51,14 @@ namespace scratch {
 		}
 
 		void poll_input();
+		void sync_next_frame();
 		bool mouse_touching(const scratch::Target*);
 		bool mouse_down();
 		void play_sound(const scratch::Sound&);
 
 		// Functions called by the outside world...
 		void start();
-		void request_render();
+		void render_frame();
 	};
 	
 	// Acquires the running app instance.
