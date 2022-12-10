@@ -27,13 +27,16 @@ namespace scratch {
 		}
 
 		Renderer::Renderer() {
+			auto [logical_x, logical_y] = get_logical_size();
+			auto [resolution_x, resolution_y] = get_screen_resolution();
 			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 			IMG_Init(IMG_INIT_PNG);
 			Mix_Init(MIX_INIT_MP3);
 			Mix_OpenAudio(48000, MIX_DEFAULT_FORMAT, 2, 2048);
-			m_window = SDL_CreateWindow("Scratch Codegen Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 480, 360, 0);
+			m_window = SDL_CreateWindow("Scratch Codegen Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, resolution_x, resolution_y, 0);
 			m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
 			m_screen_surface = SDL_GetWindowSurface(m_window);
+			SDL_RenderSetLogicalSize(m_renderer, logical_x, logical_y);
 		}
 		
 		Renderer::~Renderer() {
@@ -42,16 +45,10 @@ namespace scratch {
 		}
 		
 		void Renderer::start_frame() {
-			m_performance_counter = SDL_GetPerformanceCounter();
 			SDL_RenderClear(m_renderer);
 		}
 
 		void Renderer::end_frame() {
-			// auto end = SDL_GetPerformanceCounter();
-			// float elapsed_time = (end - m_performance_counter) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
-			// if (elapsed_time <= 16.666f) {
-			//	SDL_Delay(static_cast<unsigned int>(std::floor(16.666f - elapsed_time)));
-			//}
 			SDL_RenderPresent(m_renderer);
 		}
 

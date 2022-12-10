@@ -9,16 +9,7 @@ scratch::Target::Target()
 	m_size = 1.0f;
 	m_trans_x = 0;
 	m_trans_y = 0;
-}
-
-void scratch::Target::switch_costume(int index)
-{
-	mutex.lock();
-	if (m_costume_index < costumes.size()) {
-		m_costume_index = index;
-	}
-	mutex.unlock();
-	scratch::app()->sync_next_frame();
+	was_clicked = false;
 }
 
 void scratch::Target::setup(const std::string& str, int trans_x, int trans_y, double size, bool is_visible)
@@ -28,6 +19,7 @@ void scratch::Target::setup(const std::string& str, int trans_x, int trans_y, do
 	m_trans_y = trans_y;
 	m_size = size;
 	m_is_visible = is_visible;
+	was_clicked = false;
 }
 
 void scratch::Target::next_costume()
@@ -82,6 +74,16 @@ SDL_Rect scratch::Target::get_rect() const
 	return costumes[m_costume_index].get_rect(m_trans_x, m_trans_y, m_size);
 }
 
+void scratch::Target::switch_costume(int index)
+{
+	mutex.lock();
+	if (m_costume_index < costumes.size()) {
+		m_costume_index = index;
+	}
+	mutex.unlock();
+	scratch::app()->sync_next_frame();
+}
+
 void scratch::Target::green_flag()
 {
 }
@@ -92,4 +94,15 @@ void scratch::Target::clicked()
 
 void scratch::Target::clone_start()
 {
+}
+
+void scratch::Target::tick()
+{
+	if (!was_clicked && scratch::app()->mouse_down() && scratch::app()->mouse_touching(this)) {
+		this->clicked();
+		was_clicked = true;
+	}
+	else if (was_clicked) {
+		was_clicked = false;
+	}
 }

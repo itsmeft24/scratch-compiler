@@ -2,7 +2,7 @@
 #include <SDL2/SDL.h>
 #include "App.hpp"
 
-std::shared_ptr<scratch::App> g_app = std::make_unique<scratch::App>();
+std::shared_ptr<scratch::App> g_app = std::make_shared<scratch::App>();
 
 #include "sprites/stage.hxx"
 #include "sprites/main_menu_btn00_melee_frame_u.hxx"

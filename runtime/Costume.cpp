@@ -13,8 +13,8 @@ scratch::Costume::Costume(const std::string& file_path, int bitmap_resolution, d
 SDL_Rect scratch::Costume::get_rect(double x, double y, double size) const
 {
 	return {
-		static_cast<int>(std::round(x + scratch::app()->screen_x() / 2.0f - m_rotation_center_x * size / this->m_bitmap_resolution)),
-		static_cast<int>(std::round(-y + scratch::app()->screen_y() / 2.0f - m_rotation_center_y * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(x + scratch::backend::Renderer::get_logical_size().first / 2.0f - m_rotation_center_x * size / this->m_bitmap_resolution)),
+		static_cast<int>(std::round(-y + scratch::backend::Renderer::get_logical_size().second / 2.0f - m_rotation_center_y * size / this->m_bitmap_resolution)),
 		static_cast<int>(std::round(this->m_backing_image->width() * size / this->m_bitmap_resolution)),
 		static_cast<int>(std::round(this->m_backing_image->height() * size / this->m_bitmap_resolution)),
 	};

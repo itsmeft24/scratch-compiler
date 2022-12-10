@@ -15,6 +15,7 @@ namespace scratch {
 		double m_size;
 		int m_trans_x;
 		int m_trans_y;
+		bool was_clicked;
 		// To Do: Implement these!
 		// bool m_draggable;
 		// RotationStyle m_rotation_style;
@@ -36,6 +37,7 @@ namespace scratch {
 		virtual void green_flag();
 		virtual void clicked();
 		virtual void clone_start();
+		void tick();
 		constexpr inline double get_size() const {
 			return m_size;
 		}

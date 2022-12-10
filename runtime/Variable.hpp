@@ -32,6 +32,12 @@ namespace scratch {
 
 		Variable& operator=(const Variable&);
 		bool operator==(const Variable&);
+		/*
+		operator bool() const;
+		operator std::string() const;
+		operator long long() const;
+		void change_by(const double);
+		*/
 	};
 };
 

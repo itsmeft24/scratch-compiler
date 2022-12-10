@@ -43,8 +43,6 @@ namespace scratch {
 			SDL_Renderer* m_renderer;
 			SDL_Window* m_window;
 			SDL_Surface* m_screen_surface;
-			float m_desired_fps;
-			uint64_t m_performance_counter;
 		public:
 			Renderer();
 
@@ -55,7 +53,21 @@ namespace scratch {
 			~Renderer();
 
 			SDL_Renderer* get_backing_renderer();
-			
+
+			constexpr static inline std::pair<int, int> get_logical_size() {
+				return { 480, 360 };
+			}
+
+			constexpr static inline std::pair<int, int> get_screen_resolution() {
+				return { 960, 720 };
+			}
+
+			constexpr static inline std::pair<double, double> get_logical_scale() {
+				auto [logical_x, logical_y] = get_logical_size();
+				auto [resolution_x, resolution_y] = get_screen_resolution();
+				return { static_cast<double>(logical_x) / resolution_x, static_cast<double>(logical_y) / resolution_y };
+			}
+
 			void start_frame();
 
 			void end_frame();

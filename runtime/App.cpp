@@ -6,8 +6,8 @@
 
 using namespace std::chrono_literals;
 
-constexpr auto FRAME_TIME = 33.3333333ms;
-// constexpr auto FRAME_TIME = 16.6666666ms;
+// constexpr auto FRAME_TIME = 33.3333333ms;
+constexpr auto FRAME_TIME = 16.6666666ms;
 
 extern std::shared_ptr<scratch::App> g_app;
 
@@ -20,7 +20,7 @@ scratch::App::App()
     m_mouse_y = 0;
     m_renderer = std::make_shared<scratch::backend::Renderer>();
     m_event_listener = std::make_shared<scratch::EventListener>();
-    frame_syncer.store(false);
+    frame_syncer.store(0);
 }
 
 std::shared_ptr<scratch::Target> scratch::App::stage()
@@ -44,6 +44,12 @@ void scratch::App::poll_input()
     m_click_state = SDL_GetMouseState(&mouse_x, &mouse_y);
     m_mouse_x.store(mouse_x);
     m_mouse_y.store(mouse_y);
+
+    for (size_t x = 0; x < m_targets.size(); x++) {
+        auto& target = m_targets.at_index(x);
+        std::thread handle([target] {target->tick(); });
+        handle.detach();
+    }
 }
 
 void scratch::App::sync_next_frame()
@@ -56,17 +62,16 @@ bool scratch::App::mouse_touching(const scratch::Target* target)
 {
     double angle = target->get_rotation() * std::numbers::pi / 180.0f;
     auto [rot_x, rot_y] = target->get_rotation_axis();
+
+    auto [x_scale, y_scale] = scratch::backend::Renderer::get_logical_scale();
     SDL_Rect rect = target->get_rect();
+    rot_x *= target->get_size() * x_scale;
+    rot_y *= target->get_size() * y_scale;
 
-    if (target->get_rotation() == 0) {
-        SDL_Point mouse{m_mouse_x, m_mouse_y};
-        return SDL_PointInRect(&mouse, &rect);
-    }
-
-    return m_mouse_x * std::cos(angle) - m_mouse_y * std::sin(angle) + rot_x * target->get_size() >= rect.x
-        && m_mouse_x * std::cos(angle) - m_mouse_y * std::sin(angle) + rot_x * target->get_size() <= rect.x + rect.w
-        && m_mouse_x * std::sin(angle) + m_mouse_y * std::cos(angle) + rot_y * target->get_size() >= rect.y
-        && m_mouse_x * std::sin(angle) + m_mouse_y * std::cos(angle) + rot_y * target->get_size() <= rect.y + rect.h;
+    return (m_mouse_x * x_scale - rot_x) * std::cos(angle) - (m_mouse_y * y_scale - rot_y) * std::sin(angle) + rot_x >= rect.x
+        && (m_mouse_x * x_scale - rot_x) * std::cos(angle) - (m_mouse_y * y_scale - rot_y) * std::sin(angle) + rot_x <= rect.x + rect.w
+        && (m_mouse_x * x_scale - rot_x) * std::sin(angle) + (m_mouse_y * y_scale - rot_y) * std::cos(angle) + rot_y >= rect.y
+        && (m_mouse_x * x_scale - rot_x) * std::sin(angle) + (m_mouse_y * y_scale - rot_y) * std::cos(angle) + rot_y <= rect.y + rect.h;
 }
 
 bool scratch::App::mouse_down()
@@ -92,20 +97,6 @@ void scratch::App::start()
 
 void scratch::App::render_frame()
 {
-    /*
-    std::scoped_lock<std::mutex> lock(renderer_lock);
-    std::chrono::system_clock::duration elapsed = std::chrono::system_clock::now() - last_render;
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed) >= 33.3333333ms) {
-        m_renderer->start_frame();
-        for (size_t x = 0; x < m_targets.size(); x++) {
-            m_targets.at_index(x)->render(m_renderer);
-        }
-        m_renderer->end_frame();
-        last_render = std::chrono::system_clock::now();
-    }
-    */
-    
-    // std::scoped_lock<std::mutex> lock(m_renderer_lock);
     m_renderer->start_frame();
     for (size_t x = 0; x < m_targets.size(); x++) {
         m_targets.at_index(x)->render(m_renderer);

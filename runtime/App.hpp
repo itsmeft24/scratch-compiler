@@ -35,12 +35,8 @@ namespace scratch {
 		std::shared_ptr<scratch::Target> stage();
 		std::shared_ptr<scratch::EventListener> event_listener();
 		std::shared_ptr<scratch::backend::Renderer> renderer();
-		constexpr inline int screen_x() {
-			return 480;
-		}
-		constexpr inline int screen_y() {
-			return 360;
-		}
+
+
 
 		// Functions that sprites may call into.
 		template <class T> requires std::derived_from<T, scratch::Target> void make_clone(const std::string& name) {
